@@ -16,6 +16,11 @@ import torch
 import torchvision
 np.random.seed(0)
 
+model_weights = torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
+preprocess = model_weights.transforms()
+model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(
+    weights=model_weights)  # .to('cuda')
+
 
 def linear_assignment(cost_matrix):
     try:
@@ -271,21 +276,21 @@ def main():
     total_time = 0.0
     total_frames = 0
     colours = np.random.rand(32, 3)
-    model_weights = torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
-    preprocess = model_weights.transforms()
-    model = torchvision.models.detection.fasterrcnn_resnet50_fpn_v2(
-        weights=model_weights)  # .to('cuda')
+    # os.listdir("content")
     mot_tracker = Sort(max_age=max_age, min_hits=min_hits,
                        iou_threshold=iou_threshold)  # initialize sort track
-    # os.listdir("content")
     plt.ion()
     fig = plt.figure()
     ax1 = fig.add_subplot(111, aspect='equal')
-    for i in range(349):
+    f = open("detect.txt", 'w')
+    FRAMES_DIR = "img1"
+    lst = os.listdir(FRAMES_DIR)  # your directory path
+    number_files = len(lst)
+    for i in range(number_files):
         a = str(i)
         while (len(a) != 3):
             a = "0"+a
-        image = read_image("/bolt/img-000"+a+".png")  # .to('cuda')
+        image = read_image("/img1/img-000"+a+".png")  # .to('cuda')
         image = [image]
         dets = get_bounding_boxes(image)
         start_time = time.time()
@@ -294,11 +299,18 @@ def main():
         total_time += cycle_time
         for d in trackers:
             d = d.astype(np.int32)
+            line = ""
+            # save txt file for detection
+            line = str(i + 1) + ",-1," + str(round(d[0], 2)) + "," + str(round(d[1], 2)) + "," + str(
+                round(d[2], 2)) + "," + str(round(d[3], 2)) + "," + str(round(dets[j][-1], 2)) + ",-1,-1,-1"
+            f.write(line)
+            f.write("\n")
             ax1.add_patch(patches.Rectangle(
                 (d[0], d[1]), d[2]-d[0], d[3]-d[1], fill=False, lw=3, ec=colours[d[4] % 32, :]))
         fig.canvas.flush_events()
         plt.draw()
         ax1.cla()
+    f.close()
 
 
 if __name__ == '__main__':
